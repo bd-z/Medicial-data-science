@@ -91,18 +91,25 @@ summary_data <- data.frame(
 
 
 # # Create a styled table with centered column names and content
-summary_data %>%
-  kable("html", caption = "<b>Summary of Data</b>", row.names = FALSE) %>% # Bold caption
-  kable_styling(
-    "striped",                             # Add striped rows
-    full_width = F,                        # Table width fits content
-    position = "center",                   # Center-align the table
-    fixed_thead = F                        # Keep header fixed when scrolling
-  ) %>%
- # add_header_above(c(" " = 1, "Summary Statistics" = 3)) %>%
-  column_spec(1:ncol(summary_data),  extra_css = "text-align: center;") %>%  # Center-align all columns
-  row_spec(0, align = "center", bold = TRUE, background = "#D3D3D3")                      # Center-align column headers
+# summary_data %>%
+#   kable("html", caption = "<b>Summary of Data</b>") %>% # Bold caption
+#   kable_styling(
+#      bootstrap_options = c("striped", "hover", "condensed", "responsive"), # Add striped rows
+#     full_width = F,                        # Table width fits content
+#     position = "center",                   # Center-align the table
+#     fixed_thead = F                        # Keep header fixed when scrolling
+#   ) %>%
+#  # add_header_above(c(" " = 1, "Summary Statistics" = 3)) %>%
+#   column_spec(1:ncol(summary_data),  extra_css = "text-align: center;") %>%  # Center-align all columns
+#   row_spec(0, align = "center", bold = TRUE, background = "#D3D3D3")                      # Center-align column headers
 
+kable(summary_data, format = "html", caption = "<b>Summary of Continuous Variables </b>") %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"), 
+    full_width = F,
+    position = "center"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#D3D3D3")  # Highlight header row
 
 ```
 
@@ -111,6 +118,8 @@ summary_data %>%
 ## Chapter 2: Outlier Detection
 
 Task 2: Check the continuous variables for outliers and remove implausible values.
+
+**Summary of Continuous Variables before ourliers are removed**：
 
 ```{r, results='asis'}
 #| echo: false
@@ -134,12 +143,6 @@ kable(summary_table2, format = "html", caption = "<b>Summary of Continuous Varia
   ) %>%
   row_spec(0, bold = TRUE, background = "#D3D3D3")  # Highlight header row
 
-
-
-
-
-
-
 # Visualize each variable
 # Define the list of continuous variables
 continuous_variables <- c("age", "height", "weight", "ap_hi", "ap_lo")
@@ -156,7 +159,7 @@ generate_box_plots <- function(data, continuous_variables) {
       theme_minimal() +
       theme(
         plot.title = element_text(hjust = 0.5),
-        axis.line = element_line(linewidth = 0.5),  # 替代 size 参数
+        axis.line = element_line(linewidth = 0.5),  # 
         panel.grid.major = element_line(linewidth = 0.2),
         panel.grid.minor = element_line(linewidth = 0.1)
         )
@@ -170,8 +173,6 @@ generate_box_plots <- function(data, continuous_variables) {
 ```{r fig.align='center'}
 generate_box_plots(data, continuous_variables)
 ```
-
-**Boxplot after outliers are removed：**
 
 ```{r fig.align='center'}
 
@@ -208,9 +209,28 @@ for (var in continuous_variables) {
 
 # remove the NA rows
 data_clean <- na.omit(data_clean)
+```
 
-knitr::kable(summary(data_clean[continuous_variables]), format = "latex", booktabs = TRUE, longtable = FALSE)
+**Summary of Continuous Variables after outliers are removed：**
 
+```{r}
+# Generate the summary statistics for continuous variables outlier free
+summary_table_clean <- summary(data_clean[continuous_variables])
+
+# Convert the summary table into a kable table
+kable(summary_table_clean, format = "html", caption = "<b>Summary of Continuous Variables (outliers are removed)</b>") %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"), # Add styles
+    full_width = F,                                                       # Make it content-width
+    position = "center"                                                   # Center the table
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#D3D3D3")  # Highlight header row
+
+```
+
+**Boxplot after outliers are removed：**
+
+```{r fig.align='center'}
 generate_box_plots(data_clean, continuous_variables)
 ```
 
