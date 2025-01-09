@@ -13,6 +13,8 @@ fig-height: 2
 fig-align: center
 latex-options: [fontsize=10pt]
 geometry: "top=1in, bottom=1in, left=1in, right=1in"
+header-includes:
+  - \usepackage[table,xcdraw]{xcolor}
 ---
 
 ## Introduction
@@ -21,7 +23,7 @@ Cardiovascular diseases (CVD) are a leading cause of mortality worldwide. This r
 
 \newpage
 
-## Chapter 01 Data Preparation
+## Chapter 1: Data Preparation
 
 Task 1: Transform the variables of the data set to appropriate data types and assign factor labels for the categorical variables.
 
@@ -279,7 +281,7 @@ kable_table_func(summary_table_3, "Summary table for BMI grouped by cardio")
 
 \newpage
 
-## Chapter 4 :Correlation Between BMI and Systolic Blood Pressure
+## Chapter 4: Correlation Between BMI and Systolic Blood Pressure
 
 Task 4: How does the systolic blood pressure and the BMI correlate to each other? Is there any difference between the two classes of cardiovascular disease?
 
@@ -458,4 +460,212 @@ kable_table_func(results_ap_hi_df, "Fisher's Z-test for Correlations between BMI
 #   row_spec(0, bold = TRUE, background = "#D3D3D3")
 ```
 
-Based on the Fisher's Z-test, the Z score is `r results_ap_hi$Z_score` and the P value is `r results_ap_hi$P_value`. For the the Correlation coefficient between BMI and Systolic Blood Pressure, there is no statistically significant difference between the two groups of cardiovascular disease people based on the analyzed metric. The observed results could be due to random variation rather than a meaningful effect.
+Based on the Fisher's Z-test, the Z score is `r results_ap_hi$Z_score` and the P value is `r results_ap_hi$P_value`. Regarding the correlation coefficients between BMI and Systolic Blood Pressure, there is no statistically significant difference between the two groups of cardiovascular disease people based on the analyzed metric. The observed results could be due to random variation rather than a meaningful effect.
+
+\newpage
+
+## Chapter 5: Correlation between BMI and Diastolic blood pressure.
+
+Task 5: Answer the same question for the diastolic blood pressure.
+
+```{r fig.align='center'}
+#| fig-width: 6
+#| fig-height: 5
+
+# calculate the correlation cofficient between BMI and Diastolic blood pressure
+correlation_lo <- calculate_correlation(df, "BMI", "ap_lo") 
+
+print(paste0("The Correlation Between BMI and Diastolic blood pressure is: ", correlation_lo))
+
+# scatter_plot
+create_scatter_plot(df, "BMI", "ap_lo", group_col= NA) 
+
+# calculate the correlation between BMI and ap_lo by group
+correlation_by_cardio_ap_lo <- calculate_correlation_by_group(df, BMI = "BMI",  bp_type = "ap_lo", group = "cardio") 
+#print(correlation_by_cardio_ap_lo) 
+
+# convert into a kable table
+kable_table_func(correlation_by_cardio_ap_lo, "Correlation between BMI and Diastolic blood pressure grouped by cardio")
+create_scatter_plot(df, "BMI", "ap_lo", group_col= "cardio") 
+
+results_ap_lo <- compare_BMI_BLT_correlations_of_diease_nondiease(correlation_by_cardio_ap_lo, df)
+
+results_ap_lo_df <- data.frame(
+  Metric = names(results_ap_lo),
+  Value = unlist(results_ap_lo),
+  row.names = NULL
+)
+
+# # convert into a kable table
+kable_table_func(results_ap_lo_df, "Fisher's Z-test for Correlations between BMI and Diastolic blood pressure grouped by cardio")
+#cat("Z-score:", results_ap_lo$Z_score, "\n")
+#cat("P-value:", results_ap_lo$P_value, "\n")
+```
+
+Answer: The correlation coefficient between BMI and Diastolic Blood Pressure (ap_lo) is r = `r correlation_lo`, indicating a weak positive correlation. This suggests that as BMI increases, Diastolic Blood Pressure tends to rise slightly, though the relationship is not strong.
+
+Based on Fisher's Z-test, the Z-score is `r results_ap_lo$Z_score`, and the P-value is `r results_ap_lo$P_value`. These results show no statistically significant difference in the correlation coefficients between BMI and Diastolic Blood Pressure across the two groups of individuals with cardiovascular disease. The observed outcomes may be attributed to random variation rather than a meaningful effect.
+
+\newpage
+
+## Chapter 6: Categorize BMI into Quartiles and Visualize its Distribution Across Cardio Types 
+
+Task 6: Categorize the variable BMI according to its quartiles and visualize the distribution of the BMI categories in both cardio types.
+
+```{r fig.align='center'}
+#| fig-width: 5
+#| fig-height: 4
+# Categorize BMI into quartiles
+
+df <- df %>%
+  mutate(
+    BMI_category = cut(BMI,
+                       breaks = quantile(BMI, probs = seq(0, 1, 0.25),
+                                         na.rm = TRUE),
+                       include.lowest = TRUE,
+                       labels = c("Q1 (Lowest)", "Q2", "Q3", "Q4 (Highest)"))
+    )
+
+#Group data and count occurrences
+
+bmi_cardio_distribution <- df %>%
+  group_by(BMI_category, cardio) %>%
+  summarise(count = n(), .groups = "drop")
+# # convert into a kable table
+kable_table_func(bmi_cardio_distribution, "BMI Quartiles Distribution Across Cardio Types")
+
+# Plot the distribution
+
+ggplot(bmi_cardio_distribution, aes(x = BMI_category, y = count, fill = as.factor(cardio))) +
+  geom_bar(stat = "identity", position = "stack") + #position_dodge()) + 
+  labs(title = "Distribution of BMI Categories in Cardio Types",
+       x = "BMI Category",
+       y = "Count",
+       fill = "Cardio") +
+  scale_fill_manual(values = c("absent" = "orange", "present" = "red"),
+                    labels = c("No (absent)", "Yes (present)")) +
+  theme_minimal()
+
+bmi_cardio_heatmap <- df %>%
+  group_by(BMI_category, cardio) %>%
+  summarise(count = n(), .groups = "drop")
+
+
+ggplot(bmi_cardio_heatmap, aes(x = BMI_category, y = as.factor(cardio), fill = count)) +
+  geom_tile() +
+  labs(title = "BMI Category vs Cardio (Heatmap)",
+       x = "BMI Category",
+       y = "Cardio",
+       fill = "Count") +
+  scale_fill_gradient(low = "#FFE4B5", high = "#FF4500") +  
+  theme_minimal()
+
+
+
+# 
+# ggplot(bmi_cardio_distribution,
+#        aes(x = BMI_category, y = count, fill = as.factor(cardio)))
+# + geom_bar(stat = "identity", position = "stack")
+# #position_dodge()) + labs(title = "Distribution of BMI Categories in Cardio Types", x = "BMI Category", y = "Count", fill = "Cardio") + scale_fill_manual(values = c("0" = "orange", "1" = "red"), labels = c("No (0)", "Yes (1)")) + theme_minimal()
+# 
+# bmi_cardio_heatmap <- df %>% group_by(BMI_category, cardio) %>% summarise(count = n(), .groups = "drop")
+# 
+# ggplot(bmi_cardio_heatmap, aes(x = BMI_category, y = as.factor(cardio), fill = count)) + geom_tile() + labs(title = "BMI Category vs Cardio (Heatmap)", x = "BMI Category", y = "Cardio", fill = "Count") + scale_fill_gradient(low = "#FFE4B5", high = "#FF4500") +theme_minimal()
+```
+
+Conclusion from the Heatmap:The heatmap shows a positive association between BMI and cardiovascular disease. Higher BMI quartiles have more individuals with cardiovascular conditions ("present") and fewer without ("absent"). This suggests that as BMI increases, the likelihood of cardiovascular disease also rises.
+
+\newpage
+
+## Chapter 7:  Age Distribution Across Cardio Categories (in Years)
+
+Task 7: How is age distributed in the different categories of cardio? Display age in years.
+
+```{r fig.align='center'}
+#| fig-width: 5
+#| fig-height: 4
+
+# Summarize age distribution for each cardio group
+summary_age_by_cardio <- df %>%
+  group_by(cardio) %>%
+  summarize(
+    Count = n(),
+    Mean_Age = mean(age),
+    Median_Age = median(age),
+    Min_Age = min(age),
+    Max_Age = max(age),
+    SD_Age = sd(age)
+  )
+# convert into kable table
+kable_table_func(summary_age_by_cardio, "Summarize age distribution for each cardio group")
+```
+
+\newpage
+
+## Chapter 8: Visualizing the Age Distribution by Gender and CVD Status
+
+Task 8: Create a plot that shows the distribution of age for both types of gender and both types of cardio
+
+```{r fig.align='center'}
+#| fig-width: 5
+#| fig-height: 4
+
+# Plot the distribution of age in different cardio categories
+ggplot(df, aes(x = as.factor(cardio), y = age, fill = as.factor(cardio))) +
+  geom_boxplot() +
+  labs(title = "Age Box Plot by CVD Status",
+       x = "Cardio",
+       y = "Age (years)",
+       fill = "Cardio") +
+  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
+                    labels = c("No (0)", "Yes (1)")) +
+  theme_minimal()
+
+
+ggplot(df, aes(x = age, fill = as.factor(cardio))) +
+  geom_histogram(position = "dodge", bins = 30, alpha = 0.7) +
+  labs(title = "Age Histogram Plot by CVD Status",
+       x = "Age (years)",
+       y = "Count",
+       fill = "Cardio") +
+  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
+                    labels = c("No (0)", "Yes (1)")) +
+  theme_minimal()
+
+
+ggplot(df, aes(x = as.factor(cardio), y = age, fill = as.factor(cardio))) +
+  geom_violin(trim = FALSE) +
+  labs(title = "Age Violin Plot by CVD Status",
+       x = "Cardio",
+       y = "Age (years)",
+       fill = "Cardio") +
+  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
+                    labels = c("No (0)", "Yes (1)")) +
+  theme_minimal()
+
+
+# Create a plot that shows the distribution of age for both types of gender and both types of cardio.
+ggplot(df, aes(x = as.factor(gender), y = age, fill = as.factor(cardio))) +
+  geom_violin(trim = FALSE, alpha = 0.7) +
+  facet_wrap(~ as.factor(cardio), labeller = labeller(.default = c("absent" = "No Cardio", "present" = "Yes Cardio"))) +
+  labs(title = "Age Violin Plot by Gender and CVD Status",
+       x = "Gender (1 = Female, 2 = Male)",
+       y = "Age (Years)",
+       fill = "Cardio") +
+  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
+                    labels = c("No Cardio", "Yes Cardio")) +
+  theme_minimal()
+
+
+ggplot(df, aes(x = as.factor(gender), y = age, fill = as.factor(cardio))) +
+  geom_boxplot(alpha = 0.7) +
+  facet_wrap(~ as.factor(cardio), labeller = labeller(.default = c("absent" = "No Cardio", "present" = "Yes Cardio"))) +
+  labs(title = "Age Box Plot by Gender and  CVD Status",
+       x = "Gender (1 = Female, 2 = Male)",
+       y = "Age (Years)",
+       fill = "Cardio") +
+  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
+                    labels = c("No Cardio", "Yes Cardio")) +
+  theme_minimal()
+
+```
