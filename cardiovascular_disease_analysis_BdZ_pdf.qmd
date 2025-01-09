@@ -90,19 +90,6 @@ summary_data <- data.frame(
 )
 
 
-# # Create a styled table with centered column names and content
-# summary_data %>%
-#   kable("html", caption = "<b>Summary of Data</b>") %>% # Bold caption
-#   kable_styling(
-#      bootstrap_options = c("striped", "hover", "condensed", "responsive"), # Add striped rows
-#     full_width = F,                        # Table width fits content
-#     position = "center",                   # Center-align the table
-#     fixed_thead = F                        # Keep header fixed when scrolling
-#   ) %>%
-#  # add_header_above(c(" " = 1, "Summary Statistics" = 3)) %>%
-#   column_spec(1:ncol(summary_data),  extra_css = "text-align: center;") %>%  # Center-align all columns
-#   row_spec(0, align = "center", bold = TRUE, background = "#D3D3D3")                      # Center-align column headers
-
 kable(summary_data, format = "html", caption = "<b>Summary of Continuous Variables </b>") %>%
   kable_styling(
     bootstrap_options = c("striped", "hover", "condensed", "responsive"), 

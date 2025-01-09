@@ -1,0 +1,461 @@
+---
+title: "home_work_test"
+author: "Baodong Zhang"
+format: pdf
+echo: false
+warning: false   
+message: false   
+output: true
+cache: true
+editor: visual
+fig-width: 3
+fig-height: 2
+fig-align: center
+latex-options: [fontsize=10pt]
+geometry: "top=1in, bottom=1in, left=1in, right=1in"
+---
+
+## Introduction
+
+Cardiovascular diseases (CVD) are a leading cause of mortality worldwide. This report investigates whether cardiovascular disease (variable \`cardio\`) can be explained by other variables such as age, gender, blood pressure, BMI, and lifestyle factors like smoking, alcohol consumption, and physical activity. The analysis is based on a dataset containing various health metrics.
+
+\newpage
+
+## Chapter 01 Data Preparation
+
+Task 1: Transform the variables of the data set to appropriate data types and assign factor labels for the categorical variables.
+
+```{r}
+# Load required libraries
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(tidyr) 
+library(ggplot2)
+library(patchwork)
+
+# File path for the dataset
+data_file <- "data_cardio.csv"
+
+# Load the data using read.csv2 (semicolon-separated)
+data_raw <- read.csv2(data_file)
+
+# Data preprocessing
+data_0 <- data_raw %>%
+  mutate(
+    age = round(age / 365, 2), 
+    weight = as.numeric(weight), 
+    #BMI = weight / ((height / 100)^2),
+    smoke = smoke + 1, # for future factor conversion (to align with factor levels)
+    alco = alco + 1, 
+    active = active + 1, 
+    cardio = cardio + 1 
+  )
+
+# Specify columns to be converted into factors
+columns_to_factor <- c(
+  "gender",
+  "cholesterol",
+  "gluc",
+  "smoke",
+  "alco",
+  "active",
+  "cardio"
+)
+
+# Define labels for factor levels for each column
+labels_list <- list(
+  gender = c("Male", "Female"),
+  cholesterol = c("normal", "above normal", "well above normal"),
+  gluc = c("normal", "above normal", "well above normal"),
+  smoke = c("no", "yes"),
+  alco = c("no", "yes"),
+  active = c("no", "yes"),
+  cardio = c("absent", "present")
+)
+
+# Apply factor conversion with custom labels
+data <- data_0 %>%
+  mutate(across(
+    all_of(names(labels_list)), # Apply to columns specified in labels_list
+    ~ factor(., 
+             levels = seq_along(labels_list[[cur_column()]]), # Define levels as sequential indices
+             labels = labels_list[[cur_column()]]) # Assign custom labels
+  ))
+
+# Create a summary for each variable manually
+summary_data <- data.frame(
+  variable = names(data),                          
+  class = sapply(data, class),                     
+  unique_values = sapply(data, function(x) length(unique(x))), 
+  example_values = sapply(data, function(x) paste(head(unique(x), 5), collapse = ", ")) 
+)
+# convert a table into a kable function
+kable_table_func <- function(df, title){
+  kable(df, format = "latex", caption = title) %>%
+  kable_styling(
+    latex_options = c("striped", "hold_position"),
+    full_width = FALSE,
+    #position = "center"
+  ) %>%
+  row_spec(0, bold = TRUE, background = "#D3D3D3") 
+
+}
+# convert into a kable table
+kable_table_func(summary_data, "Data Overview")
+```
+
+\newpage
+
+## Chapter 2: Outlier Detection
+
+Task 2: Check the continuous variables for outliers and remove implausible values.
+
+```{r, results='asis'}
+#| echo: false
+continuous_variables <- c("age", "height", "weight", "ap_hi", "ap_lo") 
+#knitr::kable(summary(data[continuous_variables]), format = "latex", booktabs = TRUE, longtable = FALSE)
+
+#summary_data <- as.data.frame(summary(data[continuous_variables]))
+#knitr::kable(summary_data, format = "latex", booktabs = TRUE, longtable = FALSE)
+
+
+
+# Generate the summary statistics for continuous variables
+summary_table2 <- summary(data[continuous_variables])
+
+# convert into a kable table
+kable_table_func(summary_table2, "Summary of Continuous Variables")
+
+
+
+# kable(summary_table2, format = "latex", caption = "Summary of Continuous Variables") %>%
+#   kable_styling(
+#     latex_options = c("striped", "hold_position"),
+#     full_width = FALSE,
+#   ) %>%
+#   row_spec(0, bold = TRUE, background = "#D3D3D3") 
+
+# # Convert the summary table into a kable table
+# kable(summary_table2, format = "html", caption = "<b>Summary of Continuous Variables</b>") %>%
+#   kable_styling(
+#     bootstrap_options = c("striped", "hover", "condensed", "responsive"), # Add styles
+#     full_width = F,                                                       # Make it content-width
+#     position = "center"                                                   # Center the table
+#   ) %>%
+#   row_spec(0, bold = TRUE, background = "#D3D3D3")  # Highlight header row
+
+
+
+# Visualize each variable
+# Define the list of continuous variables
+continuous_variables <- c("age", "height", "weight", "ap_hi", "ap_lo")
+
+# Define the generate_box_plots function
+generate_box_plots <- function(data, continuous_variables) {
+ 
+  # Loop through each variable and create plots
+  for (var in continuous_variables) {
+    # Generate a boxplot
+    boxplot <- ggplot(data, aes(y = .data[[var]])) +
+      geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red", outlier.shape = 16) +
+      labs(title = paste("Boxplot of", var), y = var) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0.5),
+        axis.line = element_line(linewidth = 0.5),  # 
+        panel.grid.major = element_line(linewidth = 0.2),
+        panel.grid.minor = element_line(linewidth = 0.1)
+        )
+    print(boxplot)
+  }
+}
+```
+
+**Boxplot before outliers are removed**:
+
+```{r fig.align='center'}
+generate_box_plots(data, continuous_variables)
+```
+
+```{r fig.align='center'}
+
+# Function to remove outliers using the IQR method
+remove_outliers <- function(x, factor = 1.5) {
+  q1 <- quantile(x, 0.25, na.rm = TRUE)
+  q3 <- quantile(x, 0.75, na.rm = TRUE)
+  iqr <- q3 - q1
+  lower_bound <- q1 - factor * iqr
+  upper_bound <- q3 + factor * iqr
+  x[x < lower_bound | x > upper_bound] <- NA
+  return(x)
+}
+
+# Set thresholds for plausible values (based on domain knowledge)
+plausible_thresholds <- list(
+  age = c(0, 120),
+  height = c(50, 250),
+  weight = c(40, 300),
+  ap_hi = c(60, 250),
+  ap_lo = c(40, 150)
+)
+
+# Loop through each variable to clean outliers and implausible values
+data_clean <- data
+for (var in continuous_variables) {
+  # Replace outliers with NA
+  data_clean[[var]] <- remove_outliers(data_clean[[var]], factor = 3)
+  # Apply plausible thresholds
+  min_val <- plausible_thresholds[[var]][1]
+  max_val <- plausible_thresholds[[var]][2]
+  data_clean <- data_clean[data_clean[[var]] >= min_val & data_clean[[var]] <= max_val, ]
+}
+
+# remove the NA rows
+data_clean <- na.omit(data_clean)
+```
+
+\newpage
+
+```{r}
+# Generate the summary statistics for continuous variables outlier free
+summary_table_clean <- summary(data_clean[continuous_variables])
+
+# convert into a kable table
+kable_table_func(summary_table_clean, "Summary of Continuous Variables (outliers are removed)")
+
+
+# kable(summary_table_clean, format = "latex", caption = "Summary of Continuous Variables (outliers are removed)") %>%
+#   kable_styling(
+#     latex_options = c("striped", "hold_position"),
+#     full_width = FALSE,
+#   ) %>%
+#   row_spec(0, bold = TRUE, background = "#D3D3D3")
+
+```
+
+**Boxplot after outliers are removed：**
+
+```{r fig.align='center'}
+generate_box_plots(data_clean, continuous_variables)
+```
+
+\newpage
+
+## Chapter 3: BMI Calculation
+
+Task 3: Create a new variable BMI and provide a summary table for the variable BMI for both cardio groups.
+
+```{r}
+# Calculate BMI (Body Mass Index) 
+df <- data_clean %>% 
+  mutate(
+    BMI = weight / ((height / 100)^2)  
+  )
+
+# Create a summary table grouped by 'cardio'
+summary_table_3 <- df %>%
+  group_by(cardio) %>%
+  summarize(
+    count = n(),
+    mean_BMI = round(mean(BMI), 2),     # rounded to 2 decimal places
+    median_BMI = round(median(BMI), 2), 
+    sd_BMI = round(sd(BMI), 2),         
+    min_BMI = round(min(BMI), 2),      
+    max_BMI = round(max(BMI), 2)        
+  ) %>%
+  ungroup()
+
+# 
+# convert into a kable table
+kable_table_func(summary_table_3, "Summary table for BMI grouped by cardio")
+# kable(summary_table_3, format = "latex", caption = "summary table for BMI grouped by cardio") %>%
+#   kable_styling(
+#     latex_options = c("striped", "hold_position"),
+#     full_width = FALSE,
+#   ) %>%
+#   row_spec(0, bold = TRUE, background = "#D3D3D3")
+```
+
+\newpage
+
+## Chapter 4 :Correlation Between BMI and Systolic Blood Pressure
+
+Task 4: How does the systolic blood pressure and the BMI correlate to each other? Is there any difference between the two classes of cardiovascular disease?
+
+```{r fig.align='center'}
+#| fig-width: 6
+#| fig-height: 5
+
+# Function 1: Calculate Pearson correlation
+calculate_correlation <- function(data, col_BMI, col_bp_type) {
+  correlation <- cor(data[[col_BMI]], data[[col_bp_type]], method = "pearson", use = "complete.obs")
+  return(round(correlation, 4))
+}
+
+# Function 2: Create and display scatter plot
+create_scatter_plot <- function(data, col_BMI, col_bp_type, group_col = NA) {
+  # valid col_bp_type
+  bp_type_name <- if (col_bp_type == "ap_hi") {
+    "Systolic"
+  } else if (col_bp_type == "ap_lo") {
+    "Diastolic"
+  } else {
+    stop("Invalid bp_type column name. Please use 'ap_hi' for Systolic or 'ap_lo' for Diastolic.")
+  }
+
+  # plot basic graph
+  scatter_plot <- ggplot(data, aes(x = .data[[col_BMI]], y = .data[[col_bp_type]])) +
+    geom_point(alpha = 0.5, aes(color = if (!is.na(group_col)) .data[[group_col]] else "ALL Data")) +
+    labs(
+      title = paste("Correlation between BMI and", bp_type_name, "Blood Pressure"),
+      x = "BMI",
+      y = paste(bp_type_name, "Blood Pressure (mmHg)"),
+      color = if (!is.na(group_col)) group_col else NULL
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(size = 10, hjust = 0.5),
+      plot.margin = margin(15, 15, 15, 15)
+    )
+
+  # Add smooth line
+  if (!is.na(group_col)) {
+    # If there are groups add lines separately.
+    scatter_plot <- scatter_plot +
+      geom_smooth(aes(color = .data[[group_col]]), method = "lm", se = FALSE)
+  } else {
+    # otherwise only one line
+    scatter_plot <- scatter_plot +
+      geom_smooth(method = "lm", color = "blue", se = FALSE)
+  }
+
+  # print
+  print(scatter_plot)
+}
+
+##################
+# create_scatter_plot <- function(data, col_BMI, col_bp_type, group_col) {
+#  # if (is.na(group_col)) { color <- "blue"} else { color <- .data[[group_col]]}
+#   
+#   bp_type_name <- ifelse(col_bp_type == "ap_hi", "Systolic",
+#                          ifelse(col_bp_type == "ap_lo", "Diastolic", NA))
+# 
+#   if (is.na(bp_type_name)) {
+#     stop("Invalid bp_type column name. Please use 'ap_hi' for Systolic or 'ap_lo' for Diastolic.")
+#   }
+# 
+#   scatter_plot <- ggplot(data, aes(x = .data[[col_BMI]], y = .data[[col_bp_type]])) +
+#     #geom_point(alpha = 0.5, color = color) +
+#     geom_point(alpha = 0.5, aes(color = if (!is.na(group_col)) .data[[group_col]] else "ALL Data"))
+#     geom_smooth(method = "lm", color = "red", se = FALSE) +
+#     labs(
+#       title = paste("Correlation between BMI and", bp_type_name, "Blood Pressure"),
+#       x = "BMI",
+#       y = paste(bp_type_name, "Blood Pressure (mmHg)")
+#     ) +
+#     theme_minimal() +
+#     theme(
+#       plot.title = element_text(size = 10, hjust = 0.5),
+#       plot.margin = margin(15, 15, 15, 15)
+#     )
+# 
+#   print(scatter_plot)
+# }
+
+# Function 3: Group by `cardio` and calculate correlation for each group
+calculate_correlation_by_group <- function(data, BMI, bp_type, group = "cardio") {
+  correlation_by_cardio <- data %>%
+    group_by(.data[[group]]) %>%
+    summarize(
+      Correlation = cor(.data[[BMI]], .data[[bp_type]], method = "pearson", use = "complete.obs")
+    )
+  return(correlation_by_cardio)
+}
+
+# calculate the correlation coefficient: "BMI" and "ap_hi"(Systolic blood pressure)
+correlation <- calculate_correlation(df, "BMI", "ap_hi")
+
+# scatter plot of "BMI" and "ap_hi"
+create_scatter_plot(df, "BMI", "ap_hi", group_col= NA)
+```
+
+Answer: The Correlation coefficient between BMI and Systolic Blood Pressure is `r correlation`. This correlation indicates a weak positive correlation between BMI and systolic blood pressure. That means as BMI increases, systolic blood pressure (ap_hi) tends to increase slightly. However, this relationship is not very strong.
+
+To answer the question whether there is any difference between the two classes of cardiovascular disease, we need to calculate the correlation for the two classes separately and perform a Fisher's Z-test.
+
+```{r fig.align='center'}
+#| fig-width: 6
+#| fig-height: 5
+# scatter plot of "BMI" and "ap_hi"
+create_scatter_plot(df, "BMI", "ap_hi", group_col= "cardio")
+```
+
+```{r}
+#Group by `cardio` and calculate the above correlation for each group
+correlation_by_cardio_ap_hi <- calculate_correlation_by_group(df, BMI = "BMI", bp_type = "ap_hi", group = "cardio")
+
+# convert into a kable table
+kable_table_func(correlation_by_cardio_ap_hi, "Correlation between BMI and Systolic blood pressure grouped by cardio")
+# kable(correlation_by_cardio_ap_hi, format = "latex", caption = "Correlation between BMI and Systolic blood pressure grouped by cardio") %>%
+#   kable_styling(
+#     latex_options = c("striped", "hold_position"),
+#     full_width = FALSE,
+#   ) %>%
+#   row_spec(0, bold = TRUE, background = "#D3D3D3")
+
+```
+
+```{r}
+# Is there any difference between the two classes of cardiovascular disease?
+# Build a function to perform the statistical test of the Correlations coefficient between two groups 
+compare_BMI_BLT_correlations_of_diease_nondiease <- function(correlation_by_cardio_BPT, data) {
+  # Step 1: Extract correlations for the two groups
+  r1 <- correlation_by_cardio_BPT$Correlation[correlation_by_cardio_BPT$cardio == "absent"]
+  r2 <- correlation_by_cardio_BPT$Correlation[correlation_by_cardio_BPT$cardio == "present"]
+  
+  if (length(r1) == 0 | length(r2) == 0) {
+    stop("Both groups (cardio == 0 and cardio == 1) must have correlations.")
+  }
+  
+  # Step 2: Calculate Fisher's Z transformation
+  z1 <- atanh(r1)  # Fisher's Z for group 1
+  z2 <- atanh(r2)  # Fisher's Z for group 2
+  
+  # Step 3: Calculate standard error and Z-score
+  n1 <- sum(data$cardio == "absent", na.rm = TRUE)  # Sample size for group 1
+  n2 <- sum(data$cardio == "present", na.rm = TRUE)  # Sample size for group 2
+  
+  if (n1 <= 3 | n2 <= 3) {
+    stop("Sample sizes in both groups must be greater than 3.")
+  }
+  
+  se <- sqrt(1 / (n1 - 3) + 1 / (n2 - 3))
+  z_score <- (z1 - z2) / se
+  
+  # Step 4: Calculate p-value
+  p_value <- 2 * (1 - pnorm(abs(z_score)))
+  
+  # Return results as a list
+  return(list(Z_score = z_score, P_value = p_value))
+}
+
+results_ap_hi <- compare_BMI_BLT_correlations_of_diease_nondiease(correlation_by_cardio_ap_hi, df)
+
+results_ap_hi_df <- data.frame(
+  Metric = names(results_ap_hi),
+  Value = unlist(results_ap_hi),
+  row.names = NULL
+)
+
+# # convert into a kable table
+kable_table_func(results_ap_hi_df, "Fisher's Z-test for Correlations between BMI and Systolic blood pressure grouped by cardio")
+# kable(results_ap_hi_df, format = "latex", caption = "Fisher's Z-test for Correlations between BMI and Systolic blood pressure grouped by cardio") %>%
+#   kable_styling(
+#     latex_options = c("striped", "hold_position"),
+#     full_width = FALSE,
+#   ) %>%
+#   row_spec(0, bold = TRUE, background = "#D3D3D3")
+```
+
+Based on the Fisher's Z-test, the Z score is `r results_ap_hi$Z_score` and the P value is `r results_ap_hi$P_value`. For the the Correlation coefficient between BMI and Systolic Blood Pressure, there is no statistically significant difference between the two groups of cardiovascular disease people based on the analyzed metric. The observed results could be due to random variation rather than a meaningful effect.
