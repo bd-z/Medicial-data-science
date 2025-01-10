@@ -584,29 +584,6 @@ ggplot(df, aes(x = as.factor(gender), y = age, fill = gluc)) +
   ) +
   theme_minimal()
 
-
-# 
-# 
-# 
-# 
-# ggplot(df, aes(x = interaction(gender, cardio), y = age, fill = as.factor(gender))) +
-#   geom_violin(trim = FALSE, alpha = 0.6) +       # Violin plot with some transparency
-#   geom_boxplot(width = 0.2, position = position_dodge(width = 0.9)) +  # Boxplot overlay
-#   facet_wrap(~ gluc, labeller = labeller(gluc = c("normal" = "Normal", "above normal" = "Above Normal", "well above normal" = "Well Above Normal"))) +
-#   labs(title = "Age Distribution by Gender, Cardio, and Glucose Levels",
-#        x = "Gender and Cardio",
-#        y = "Age (years)",
-#        fill = "Gender") +
-#   scale_x_discrete(labels = c("1_0" = "Male No Cardio",
-#                               "1_1" = "Male Cardio",
-#                               "2_0" = "Female No Cardio",
-#                               "2_1" = "Female Cardio")) +
-#   scale_fill_manual(values = c("Male" = "green", "Female" = "pink")) +
-#   theme_minimal() +
-#   theme(strip.text = element_text(size = 12),  # Adjust facet label font size
-#         strip.background = element_rect(fill = "lightgray", color = "black"))  # Adjust facet label background
-# 
-
 ```
 
 ```{r fig.align='center'}
@@ -724,4 +701,103 @@ variables <- c("smoke", "alco", "active")
 lapply(variables, function(var) {
   create_distribution_plot(df, variable = var)
 })
+```
+
+```{r}
+# Create a summary table
+summary_table_1 <- data.frame(
+  Category = c("Smoking", "Alcohol", "Physical Activity"),  # Categories to summarize
+  Yes = c(sum(df$smoke == "yes"), sum(df$alco == "yes"), sum(df$active == "yes")),  # Count of "yes" responses
+  No = c(sum(df$smoke == "no"), sum(df$alco == "no"), sum(df$active == "no"))  # Count of "no" responses
+)
+
+# Add a total column for each category
+summary_table_1$Total <- summary_table_1$Yes + summary_table_1$No
+
+####################
+# Create a detailed summary table considering the 'cardio' factor
+summary_table_2 <- df %>%
+  group_by(cardio) %>%
+  summarize(
+    Smoking_Yes = sum(smoke == "yes"),
+    Smoking_No = sum(smoke == "no"),
+    Alcohol_Yes = sum(alco == "yes"),
+    Alcohol_No = sum(alco == "no"),
+    Active_Yes = sum(active == "yes"),
+    Active_No = sum(active == "no")
+  ) %>%
+  mutate(
+    Total_Smoking = Smoking_Yes + Smoking_No,
+    Total_Alcohol = Alcohol_Yes + Alcohol_No,
+    Total_Active = Active_Yes + Active_No
+  )
+
+
+# Create a detailed summary table considering the 'cardio' factor
+summary_table <- df %>%
+  group_by(cardio) %>%
+  summarize(
+    Smoking_Yes = sum(smoke == "yes"),
+    Smoking_No = sum(smoke == "no"),
+    Alcohol_Yes = sum(alco == "yes"),
+    Alcohol_No = sum(alco == "no"),
+    Active_Yes = sum(active == "yes"),
+    Active_No = sum(active == "no")
+  ) %>%
+  mutate(
+    Total_Smoking = Smoking_Yes + Smoking_No,
+    Total_Alcohol = Alcohol_Yes + Alcohol_No,
+    Total_Active = Active_Yes + Active_No
+  )
+
+# Reshape the summary table into a vertical format
+vertical_table <- summary_table %>%
+  pivot_longer(
+    cols = -cardio,  # Columns to reshape (all except 'cardio')
+    names_to = "Category",  # Name for the new column with variable names
+    values_to = "Count"  # Name for the new column with values
+  )
+```
+
+```{r}
+
+# Summarize the proportions of smoke, alco, and active for each cardio group.
+overview_table <- df %>%
+  group_by(cardio) %>%
+  summarize(
+    Smoking_Yes = round(sum(smoke == "yes") / n(), 4),
+    Smoking_No = round(sum(smoke == "no") / n(), 4),
+    Alcohol_Yes = round(sum(alco == "yes") / n(), 4),
+    Alcohol_No = round(sum(alco == "no") / n(), 4),
+    Active_Yes = round(sum(active == "yes") / n(), 4),
+    Active_No = round(sum(active == "no") / n(), 4)
+  )
+
+
+kable_table_func(overview_table, "propotion for each cardio group")
+```
+
+```{r}
+# Chi-Square test for Smoking
+smoking_table <- table(df$smoke, df$cardio)
+smoking_test <- chisq.test(smoking_table)
+
+# Chi-Square test for Alcohol
+alcohol_table <- table(df$alco, df$cardio)
+alcohol_test <- chisq.test(alcohol_table)
+
+# Chi-Square test for Physical Activity
+activity_table <- table(df$active, df$cardio)
+activity_test <- chisq.test(activity_table)
+
+# Display the results
+list(
+  Smoking_Test = smoking_test,
+  Alcohol_Test = alcohol_test,
+  Activity_Test = activity_test
+)
+```
+
+```{r}
+
 ```
