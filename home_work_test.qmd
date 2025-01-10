@@ -34,7 +34,7 @@ library(knitr)
 library(kableExtra)
 library(tidyr) 
 library(ggplot2)
-library(patchwork)
+#library(patchwork)
 
 # File path for the dataset
 data_file <- "data_cardio.csv"
@@ -92,6 +92,7 @@ summary_data <- data.frame(
   unique_values = sapply(data, function(x) length(unique(x))), 
   example_values = sapply(data, function(x) paste(head(unique(x), 5), collapse = ", ")) 
 )
+
 # convert a table into a kable function
 kable_table_func <- function(df, title){
   kable(df, format = "latex", caption = title) %>%
@@ -101,8 +102,8 @@ kable_table_func <- function(df, title){
     #position = "center"
   ) %>%
   row_spec(0, bold = TRUE, background = "#D3D3D3") 
-
 }
+
 # convert into a kable table
 kable_table_func(summary_data, "Data Overview")
 ```
@@ -116,38 +117,12 @@ Task 2: Check the continuous variables for outliers and remove implausible value
 ```{r, results='asis'}
 #| echo: false
 continuous_variables <- c("age", "height", "weight", "ap_hi", "ap_lo") 
-#knitr::kable(summary(data[continuous_variables]), format = "latex", booktabs = TRUE, longtable = FALSE)
-
-#summary_data <- as.data.frame(summary(data[continuous_variables]))
-#knitr::kable(summary_data, format = "latex", booktabs = TRUE, longtable = FALSE)
-
-
 
 # Generate the summary statistics for continuous variables
 summary_table2 <- summary(data[continuous_variables])
 
 # convert into a kable table
 kable_table_func(summary_table2, "Summary of Continuous Variables")
-
-
-
-# kable(summary_table2, format = "latex", caption = "Summary of Continuous Variables") %>%
-#   kable_styling(
-#     latex_options = c("striped", "hold_position"),
-#     full_width = FALSE,
-#   ) %>%
-#   row_spec(0, bold = TRUE, background = "#D3D3D3") 
-
-# # Convert the summary table into a kable table
-# kable(summary_table2, format = "html", caption = "<b>Summary of Continuous Variables</b>") %>%
-#   kable_styling(
-#     bootstrap_options = c("striped", "hover", "condensed", "responsive"), # Add styles
-#     full_width = F,                                                       # Make it content-width
-#     position = "center"                                                   # Center the table
-#   ) %>%
-#   row_spec(0, bold = TRUE, background = "#D3D3D3")  # Highlight header row
-
-
 
 # Visualize each variable
 # Define the list of continuous variables
@@ -180,7 +155,7 @@ generate_box_plots <- function(data, continuous_variables) {
 generate_box_plots(data, continuous_variables)
 ```
 
-```{r fig.align='center'}
+```{r}
 
 # Function to remove outliers using the IQR method
 remove_outliers <- function(x, factor = 1.5) {
@@ -225,15 +200,6 @@ summary_table_clean <- summary(data_clean[continuous_variables])
 
 # convert into a kable table
 kable_table_func(summary_table_clean, "Summary of Continuous Variables (outliers are removed)")
-
-
-# kable(summary_table_clean, format = "latex", caption = "Summary of Continuous Variables (outliers are removed)") %>%
-#   kable_styling(
-#     latex_options = c("striped", "hold_position"),
-#     full_width = FALSE,
-#   ) %>%
-#   row_spec(0, bold = TRUE, background = "#D3D3D3")
-
 ```
 
 **Boxplot after outliers are removed：**
@@ -268,15 +234,8 @@ summary_table_3 <- df %>%
   ) %>%
   ungroup()
 
-# 
 # convert into a kable table
 kable_table_func(summary_table_3, "Summary table for BMI grouped by cardio")
-# kable(summary_table_3, format = "latex", caption = "summary table for BMI grouped by cardio") %>%
-#   kable_styling(
-#     latex_options = c("striped", "hold_position"),
-#     full_width = FALSE,
-#   ) %>%
-#   row_spec(0, bold = TRUE, background = "#D3D3D3")
 ```
 
 \newpage
@@ -285,10 +244,7 @@ kable_table_func(summary_table_3, "Summary table for BMI grouped by cardio")
 
 Task 4: How does the systolic blood pressure and the BMI correlate to each other? Is there any difference between the two classes of cardiovascular disease?
 
-```{r fig.align='center'}
-#| fig-width: 6
-#| fig-height: 5
-
+```{r}
 # Function 1: Calculate Pearson correlation
 calculate_correlation <- function(data, col_BMI, col_bp_type) {
   correlation <- cor(data[[col_BMI]], data[[col_bp_type]], method = "pearson", use = "complete.obs")
@@ -336,35 +292,6 @@ create_scatter_plot <- function(data, col_BMI, col_bp_type, group_col = NA) {
   print(scatter_plot)
 }
 
-##################
-# create_scatter_plot <- function(data, col_BMI, col_bp_type, group_col) {
-#  # if (is.na(group_col)) { color <- "blue"} else { color <- .data[[group_col]]}
-#   
-#   bp_type_name <- ifelse(col_bp_type == "ap_hi", "Systolic",
-#                          ifelse(col_bp_type == "ap_lo", "Diastolic", NA))
-# 
-#   if (is.na(bp_type_name)) {
-#     stop("Invalid bp_type column name. Please use 'ap_hi' for Systolic or 'ap_lo' for Diastolic.")
-#   }
-# 
-#   scatter_plot <- ggplot(data, aes(x = .data[[col_BMI]], y = .data[[col_bp_type]])) +
-#     #geom_point(alpha = 0.5, color = color) +
-#     geom_point(alpha = 0.5, aes(color = if (!is.na(group_col)) .data[[group_col]] else "ALL Data"))
-#     geom_smooth(method = "lm", color = "red", se = FALSE) +
-#     labs(
-#       title = paste("Correlation between BMI and", bp_type_name, "Blood Pressure"),
-#       x = "BMI",
-#       y = paste(bp_type_name, "Blood Pressure (mmHg)")
-#     ) +
-#     theme_minimal() +
-#     theme(
-#       plot.title = element_text(size = 10, hjust = 0.5),
-#       plot.margin = margin(15, 15, 15, 15)
-#     )
-# 
-#   print(scatter_plot)
-# }
-
 # Function 3: Group by `cardio` and calculate correlation for each group
 calculate_correlation_by_group <- function(data, BMI, bp_type, group = "cardio") {
   correlation_by_cardio <- data %>%
@@ -374,9 +301,17 @@ calculate_correlation_by_group <- function(data, BMI, bp_type, group = "cardio")
     )
   return(correlation_by_cardio)
 }
+```
+
+```{r}
 
 # calculate the correlation coefficient: "BMI" and "ap_hi"(Systolic blood pressure)
 correlation <- calculate_correlation(df, "BMI", "ap_hi")
+```
+
+```{r fig.align='center'}
+#| fig-width: 6
+#| fig-height: 5
 
 # scatter plot of "BMI" and "ap_hi"
 create_scatter_plot(df, "BMI", "ap_hi", group_col= NA)
@@ -399,13 +334,6 @@ correlation_by_cardio_ap_hi <- calculate_correlation_by_group(df, BMI = "BMI", b
 
 # convert into a kable table
 kable_table_func(correlation_by_cardio_ap_hi, "Correlation between BMI and Systolic blood pressure grouped by cardio")
-# kable(correlation_by_cardio_ap_hi, format = "latex", caption = "Correlation between BMI and Systolic blood pressure grouped by cardio") %>%
-#   kable_styling(
-#     latex_options = c("striped", "hold_position"),
-#     full_width = FALSE,
-#   ) %>%
-#   row_spec(0, bold = TRUE, background = "#D3D3D3")
-
 ```
 
 ```{r}
@@ -460,7 +388,7 @@ kable_table_func(results_ap_hi_df, "Fisher's Z-test for Correlations between BMI
 #   row_spec(0, bold = TRUE, background = "#D3D3D3")
 ```
 
-Based on the Fisher's Z-test, the Z score is `r results_ap_hi$Z_score` and the P value is `r results_ap_hi$P_value`. Regarding the correlation coefficients between BMI and Systolic Blood Pressure, there is no statistically significant difference between the two groups of cardiovascular disease people based on the analyzed metric. The observed results could be due to random variation rather than a meaningful effect.
+Based on the Fisher's Z-test, the Z score is `r results_ap_hi$Z_score` and the P value is `r results_ap_hi$P_value`. The correlation between BMI and Systolic Blood Pressure shows no statistically significant difference between the two AVD groups, suggesting the results may be due to random variation rather than a meaningful effect.
 
 \newpage
 
@@ -468,14 +396,18 @@ Based on the Fisher's Z-test, the Z score is `r results_ap_hi$Z_score` and the P
 
 Task 5: Answer the same question for the diastolic blood pressure.
 
+```{r}
+# calculate the correlation cofficient between BMI and Diastolic blood pressure
+correlation_lo <- calculate_correlation(df, "BMI", "ap_lo") 
+```
+
+The Correlation Between BMI and Diastolic blood pressure is `r correlation_lo`.
+
 ```{r fig.align='center'}
 #| fig-width: 6
 #| fig-height: 5
 
-# calculate the correlation cofficient between BMI and Diastolic blood pressure
-correlation_lo <- calculate_correlation(df, "BMI", "ap_lo") 
 
-print(paste0("The Correlation Between BMI and Diastolic blood pressure is: ", correlation_lo))
 
 # scatter_plot
 create_scatter_plot(df, "BMI", "ap_lo", group_col= NA) 
@@ -498,17 +430,15 @@ results_ap_lo_df <- data.frame(
 
 # # convert into a kable table
 kable_table_func(results_ap_lo_df, "Fisher's Z-test for Correlations between BMI and Diastolic blood pressure grouped by cardio")
-#cat("Z-score:", results_ap_lo$Z_score, "\n")
-#cat("P-value:", results_ap_lo$P_value, "\n")
 ```
 
-Answer: The correlation coefficient between BMI and Diastolic Blood Pressure (ap_lo) is r = `r correlation_lo`, indicating a weak positive correlation. This suggests that as BMI increases, Diastolic Blood Pressure tends to rise slightly, though the relationship is not strong.
+Answer: The correlation coefficient between BMI and Diastolic Blood Pressure (ap_lo) is `r correlation_lo`, indicating a weak positive correlation. This suggests that as BMI increases, Diastolic Blood Pressure tends to rise slightly, though the relationship is not strong.
 
-Based on Fisher's Z-test, the Z-score is `r results_ap_lo$Z_score`, and the P-value is `r results_ap_lo$P_value`. These results show no statistically significant difference in the correlation coefficients between BMI and Diastolic Blood Pressure across the two groups of individuals with cardiovascular disease. The observed outcomes may be attributed to random variation rather than a meaningful effect.
+Based on Fisher's Z-test, the Z-score is `r results_ap_lo$Z_score`, and the P-value is `r results_ap_lo$P_value`. These results show no statistically significant difference in the correlation coefficients between BMI and Diastolic Blood Pressure across the two groups of individuals with/without cardiovascular disease. The observed outcomes may be attributed to random variation rather than a meaningful effect.
 
 \newpage
 
-## Chapter 6: Categorize BMI into Quartiles and Visualize its Distribution Across Cardio Types 
+## Chapter 6: Categorize BMI into Quartiles and Visualize its Distribution Across Cardio Types
 
 Task 6: Categorize the variable BMI according to its quartiles and visualize the distribution of the BMI categories in both cardio types.
 
@@ -560,24 +490,13 @@ ggplot(bmi_cardio_heatmap, aes(x = BMI_category, y = as.factor(cardio), fill = c
   scale_fill_gradient(low = "#FFE4B5", high = "#FF4500") +  
   theme_minimal()
 
-
-
-# 
-# ggplot(bmi_cardio_distribution,
-#        aes(x = BMI_category, y = count, fill = as.factor(cardio)))
-# + geom_bar(stat = "identity", position = "stack")
-# #position_dodge()) + labs(title = "Distribution of BMI Categories in Cardio Types", x = "BMI Category", y = "Count", fill = "Cardio") + scale_fill_manual(values = c("0" = "orange", "1" = "red"), labels = c("No (0)", "Yes (1)")) + theme_minimal()
-# 
-# bmi_cardio_heatmap <- df %>% group_by(BMI_category, cardio) %>% summarise(count = n(), .groups = "drop")
-# 
-# ggplot(bmi_cardio_heatmap, aes(x = BMI_category, y = as.factor(cardio), fill = count)) + geom_tile() + labs(title = "BMI Category vs Cardio (Heatmap)", x = "BMI Category", y = "Cardio", fill = "Count") + scale_fill_gradient(low = "#FFE4B5", high = "#FF4500") +theme_minimal()
 ```
 
 Conclusion from the Heatmap:The heatmap shows a positive association between BMI and cardiovascular disease. Higher BMI quartiles have more individuals with cardiovascular conditions ("present") and fewer without ("absent"). This suggests that as BMI increases, the likelihood of cardiovascular disease also rises.
 
 \newpage
 
-## Chapter 7:  Age Distribution Across Cardio Categories (in Years)
+## Chapter 7: Age Distribution Across Cardio Categories (in Years)
 
 Task 7: How is age distributed in the different categories of cardio? Display age in years.
 
@@ -610,48 +529,16 @@ Task 8: Create a plot that shows the distribution of age for both types of gende
 #| fig-width: 5
 #| fig-height: 4
 
-# Plot the distribution of age in different cardio categories
-ggplot(df, aes(x = as.factor(cardio), y = age, fill = as.factor(cardio))) +
-  geom_boxplot() +
-  labs(title = "Age Box Plot by CVD Status",
-       x = "Cardio",
-       y = "Age (years)",
-       fill = "Cardio") +
-  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
-                    labels = c("No (0)", "Yes (1)")) +
-  theme_minimal()
-
-
-ggplot(df, aes(x = age, fill = as.factor(cardio))) +
-  geom_histogram(position = "dodge", bins = 30, alpha = 0.7) +
-  labs(title = "Age Histogram Plot by CVD Status",
-       x = "Age (years)",
-       y = "Count",
-       fill = "Cardio") +
-  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
-                    labels = c("No (0)", "Yes (1)")) +
-  theme_minimal()
-
-
-ggplot(df, aes(x = as.factor(cardio), y = age, fill = as.factor(cardio))) +
-  geom_violin(trim = FALSE) +
-  labs(title = "Age Violin Plot by CVD Status",
-       x = "Cardio",
-       y = "Age (years)",
-       fill = "Cardio") +
-  scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
-                    labels = c("No (0)", "Yes (1)")) +
-  theme_minimal()
-
-
-# Create a plot that shows the distribution of age for both types of gender and both types of cardio.
-ggplot(df, aes(x = as.factor(gender), y = age, fill = as.factor(cardio))) +
-  geom_violin(trim = FALSE, alpha = 0.7) +
-  facet_wrap(~ as.factor(cardio), labeller = labeller(.default = c("absent" = "No Cardio", "present" = "Yes Cardio"))) +
-  labs(title = "Age Violin Plot by Gender and CVD Status",
-       x = "Gender (1 = Female, 2 = Male)",
-       y = "Age (Years)",
-       fill = "Cardio") +
+# Faceted histogram by gender and cardio
+ggplot(df, aes(x = age, fill = factor(cardio))) +
+  geom_histogram(binwidth = 5, color = "black", alpha = 0.7, position = "dodge") +
+  facet_wrap(~ gender, ncol = 2) +
+  labs(
+    title = "Distribution of Age by Gender and Cardio Categories",
+    x = "Age (years)",
+    y = "Count",
+    fill = "Cardio"
+  ) +
   scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
                     labels = c("No Cardio", "Yes Cardio")) +
   theme_minimal()
@@ -667,5 +554,174 @@ ggplot(df, aes(x = as.factor(gender), y = age, fill = as.factor(cardio))) +
   scale_fill_manual(values = c("absent" = "blue", "present" = "red"),
                     labels = c("No Cardio", "Yes Cardio")) +
   theme_minimal()
+```
 
+\newpage
+
+## Chapter 9: Age Distribution with Glucose Levels
+
+Task 9. Extend this plot by taking the different types of glucose into account.
+
+```{r fig.align='center'}
+#| fig-width: 6
+#| fig-height: 5
+# Create the plot with glucose levels as facets
+
+ggplot(df, aes(x = as.factor(gender), y = age, fill = gluc)) +
+  geom_boxplot(alpha = 0.7) +
+  facet_grid(as.factor(cardio) ~ as.factor(gluc), 
+             labeller = labeller(cardio = c("absent" = "No Cardio", "present" = "Yes Cardio"),
+                                 gluc = c("normal" = "Normal", "above normal" = "Above", "well above normal" = "Well Above"))) +
+  labs(
+    title = "Age Distribution by Gender, Glucose Levels, and CVD Status",
+    x = "Gender (1 = Female, 2 = Male)",
+    y = "Age (Years)",
+    fill = "gluc"
+  ) +
+  scale_fill_manual(
+    values = c("normal" = "lightgreen", "above normal" = "orange", "well above normal" = "red"),
+    labels = c("Normal", "Above", "WellAbove")
+  ) +
+  theme_minimal()
+
+
+# 
+# 
+# 
+# 
+# ggplot(df, aes(x = interaction(gender, cardio), y = age, fill = as.factor(gender))) +
+#   geom_violin(trim = FALSE, alpha = 0.6) +       # Violin plot with some transparency
+#   geom_boxplot(width = 0.2, position = position_dodge(width = 0.9)) +  # Boxplot overlay
+#   facet_wrap(~ gluc, labeller = labeller(gluc = c("normal" = "Normal", "above normal" = "Above Normal", "well above normal" = "Well Above Normal"))) +
+#   labs(title = "Age Distribution by Gender, Cardio, and Glucose Levels",
+#        x = "Gender and Cardio",
+#        y = "Age (years)",
+#        fill = "Gender") +
+#   scale_x_discrete(labels = c("1_0" = "Male No Cardio",
+#                               "1_1" = "Male Cardio",
+#                               "2_0" = "Female No Cardio",
+#                               "2_1" = "Female Cardio")) +
+#   scale_fill_manual(values = c("Male" = "green", "Female" = "pink")) +
+#   theme_minimal() +
+#   theme(strip.text = element_text(size = 12),  # Adjust facet label font size
+#         strip.background = element_rect(fill = "lightgray", color = "black"))  # Adjust facet label background
+# 
+
+```
+
+```{r fig.align='center'}
+#| fig-width: 5
+#| fig-height: 4
+# Define a function to create distribution plots
+create_distribution_plot <- function(df, variable, title, x_label) {
+  ggplot(df, aes(x = .data[[variable]], fill = cardio)) +
+    geom_bar(position = "fill") +
+    labs(
+      title = title,
+      x = x_label,
+      y = "Proportion",
+      fill = "Cardio (No Disease, Disease)"
+    ) +
+    theme_minimal()
+}
+
+# Define the variables and their corresponding titles and labels
+# variables <- list(
+#   list(name = "smoke", title = "Smoking Distribution by Cardio Groups", x_label = "Smoking (No, Yes)"),
+#   list(name = "alco", title = "Alcohol Consumption Distribution by Cardio Groups", x_label = "Alcohol Consumption (No, Yes)"),
+#   list(name = "active", title = "Physical Activity Distribution by Cardio Groups", x_label = "Physical Activity (Inactive, Active)")
+# )
+# 
+# # Create a list of plots
+# lapply(variables, function(var) {
+#   create_distribution_plot(
+#     df,
+#     variable = var$name,
+#     title = var$title,
+#     x_label = var$x_label
+#   )
+# })
+#########################
+# Function to create distribution plots with proportions and dynamic title/x_label
+create_distribution_plot <- function(df, variable) {
+  # Calculate proportions
+  prop_data <- df %>%
+    group_by(.data[[variable]], cardio) %>%
+    summarize(count = n(), .groups = "drop") %>%
+    group_by(.data[[variable]]) %>%
+    mutate(proportion = count / sum(count),
+           proportion_label = scales::percent(proportion, accuracy = 0.1))
+ 
+  # print(prop_data)
+  # kable_table_func(prop_data, "propotion for each cardio group")
+   
+  # Create the plot
+  ggplot(prop_data, aes(x = .data[[variable]], y = proportion, fill = cardio)) +
+    geom_bar(stat = "identity", position = "fill") +
+    geom_text(
+      aes(label = proportion_label), 
+      position = position_fill(vjust = 0.5), 
+      size = 3
+    ) +
+    scale_fill_manual(
+      values = c("absent" = "lightgreen", "present" = "pink"),
+      labels = c("No Disease", "Disease")
+    ) +
+    labs(
+      title = paste(variable, "Distribution by Cardio Groups"),
+      x = variable,
+      y = "Proportion",
+      fill = "Cardio"
+    ) +
+    theme_minimal()
+}
+
+# Define the variables to plot
+variables <- c("smoke", "alco", "active")
+
+# Create a list of plots dynamically
+lapply(variables, function(var) {
+  create_distribution_plot(df, variable = var)
+})
+########################################
+
+# Function to create distribution plots with overall proportions
+create_distribution_plot <- function(df, variable) {
+  # Calculate overall proportions
+  prop_data <- df %>%
+    group_by(.data[[variable]], cardio) %>%
+    summarize(count = n(), .groups = "drop") %>%
+    mutate(
+      proportion = count / sum(count),  # Proportion relative to the entire dataset
+      proportion_label = scales::percent(proportion, accuracy = 0.1)  # Format as percentages
+    )
+  
+  # Create the plot
+  ggplot(prop_data, aes(x = .data[[variable]], y = proportion, fill = cardio)) +
+    geom_bar(stat = "identity", position = "stack") +
+    geom_text(
+      aes(label = proportion_label), 
+      position = position_stack(vjust = 0.5), 
+      size = 3
+    ) +
+    scale_fill_manual(
+      values = c("absent" = "green", "present" = "red"),
+      labels = c("No Disease", "Disease")
+    ) +
+    labs(
+      title = paste(variable, "Distribution by Cardio Groups (Overall Proportion)"),
+      x = variable,
+      y = "Proportion of Total",
+      fill = "Cardio Status"
+    ) +
+    theme_minimal()
+}
+
+# Define the variables to plot
+variables <- c("smoke", "alco", "active")
+
+# Create a list of plots dynamically
+lapply(variables, function(var) {
+  create_distribution_plot(df, variable = var)
+})
 ```
