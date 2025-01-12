@@ -15,11 +15,12 @@ latex-options: [fontsize=10pt]
 geometry: "top=1in, bottom=1in, left=1in, right=1in"
 header-includes:
   - \usepackage[table,xcdraw]{xcolor}
+bibliography: references.bib
 ---
 
 ## Introduction
 
-Cardiovascular diseases (CVD) are a leading cause of mortality worldwide. This report investigates whether cardiovascular disease (variable \`cardio\`) can be explained by other variables such as age, gender, blood pressure, BMI, and lifestyle factors like smoking, alcohol consumption, and physical activity. The analysis is based on a dataset containing various health metrics.
+Cardiovascular diseases (CVD) are a leading cause of mortality worldwide [@who-cvd]. This report investigates whether cardiovascular disease (variable \`cardio\`) can be explained by other variables such as age, gender, blood pressure, BMI, and lifestyle factors like smoking, alcohol consumption, and physical activity. The analysis is based on a dataset containing various health metrics.
 
 \newpage
 
@@ -34,7 +35,7 @@ library(knitr)
 library(kableExtra)
 library(tidyr) 
 library(ggplot2)
-#library(patchwork)
+library(stringr)
 
 # File path for the dataset
 data_file <- "data_cardio.csv"
@@ -234,22 +235,31 @@ summary_table_3 <- df %>%
   ) %>%
   ungroup()
 
+# T test for the  BMI means in two cardio groups
+t_test_result <- t.test(BMI ~ cardio, data = df, var.equal = TRUE)
 # convert into a kable table
 kable_table_func(summary_table_3, "Summary table for BMI grouped by cardio")
 ```
+
+The two-sample t-test, under the assumptions of normality and independence of observations, indicated a significant difference in mean BMI between individuals without cardiovascular disease and those with the disease. Assuming equal variances, the test yielded a a p-value `r t_test_result$p.value``. This suggesting that individuals with CVD tend to have significantly higher BMI than those without.
+
 
 \newpage
 
 ## Chapter 4: Correlation Between BMI and Systolic Blood Pressure
 
-Task 4: How does the systolic blood pressure and the BMI correlate to each other? Is there any difference between the two classes of cardiovascular disease?
+Task 4: How does the systolic blood pressure (SBP) and the BMI correlate to each other? Is there any difference between the two classes of cardiovascular disease?
 
 ```{r}
 # Function 1: Calculate Pearson correlation
 calculate_correlation <- function(data, col_BMI, col_bp_type) {
-  correlation <- cor(data[[col_BMI]], data[[col_bp_type]], method = "pearson", use = "complete.obs")
-  return(round(correlation, 4))
+  #correlation <- cor(data[[col_BMI]], data[[col_bp_type]], method = "pearson", use = "complete.obs")
+  result <- cor.test(data[[col_bp_type]], data[[col_BMI]], method = "pearson")
+  correlation <- unname(result$estimate)
+  p_value <- result$p.value
+  return(list(correlation = correlation, p_value = p_value))
 }
+  
 
 # Function 2: Create and display scatter plot
 create_scatter_plot <- function(data, col_BMI, col_bp_type, group_col = NA) {
@@ -292,21 +302,25 @@ create_scatter_plot <- function(data, col_BMI, col_bp_type, group_col = NA) {
   print(scatter_plot)
 }
 
-# Function 3: Group by `cardio` and calculate correlation for each group
+# Function 3: Group by `cardio` and calculate correlation and p-value for each group
 calculate_correlation_by_group <- function(data, BMI, bp_type, group = "cardio") {
-  correlation_by_cardio <- data %>%
+  data %>%
     group_by(.data[[group]]) %>%
     summarize(
-      Correlation = cor(.data[[BMI]], .data[[bp_type]], method = "pearson", use = "complete.obs")
+      Correlation = cor.test(.data[[BMI]], .data[[bp_type]], method = "pearson", use = "complete.obs")$estimate
+      #P_value = cor.test(.data[[BMI]], .data[[bp_type]], method = "pearson", use = "complete.obs")$p.value
     )
-  return(correlation_by_cardio)
 }
+
 ```
 
 ```{r}
 
 # calculate the correlation coefficient: "BMI" and "ap_hi"(Systolic blood pressure)
-correlation <- calculate_correlation(df, "BMI", "ap_hi")
+result_1 <- calculate_correlation(df, "BMI", "ap_hi")
+correlation <- result_1$correlation
+p_value <- result_1$p_value
+
 ```
 
 ```{r fig.align='center'}
@@ -317,9 +331,9 @@ correlation <- calculate_correlation(df, "BMI", "ap_hi")
 create_scatter_plot(df, "BMI", "ap_hi", group_col= NA)
 ```
 
-Answer: The Correlation coefficient between BMI and Systolic Blood Pressure is `r correlation`. This correlation indicates a weak positive correlation between BMI and systolic blood pressure. That means as BMI increases, systolic blood pressure (ap_hi) tends to increase slightly. However, this relationship is not very strong.
+Answer: The correlation coefficient between BMI and Systolic Blood Pressure (SBP) is `r correlation`, indicating a weak positive correlation. The p-value is `r p_value`, showing that this weak positive correlation is statistically significant across the dataset.
 
-To answer the question whether there is any difference between the two classes of cardiovascular disease, we need to calculate the correlation for the two classes separately and perform a Fisher's Z-test.
+To determine whether there is a difference between the two classes of cardiovascular disease, we will calculate the correlation coefficients for each class separately and conduct a Fisher's Z-test.
 
 ```{r fig.align='center'}
 #| fig-width: 6
@@ -380,12 +394,6 @@ results_ap_hi_df <- data.frame(
 
 # # convert into a kable table
 kable_table_func(results_ap_hi_df, "Fisher's Z-test for Correlations between BMI and Systolic blood pressure grouped by cardio")
-# kable(results_ap_hi_df, format = "latex", caption = "Fisher's Z-test for Correlations between BMI and Systolic blood pressure grouped by cardio") %>%
-#   kable_styling(
-#     latex_options = c("striped", "hold_position"),
-#     full_width = FALSE,
-#   ) %>%
-#   row_spec(0, bold = TRUE, background = "#D3D3D3")
 ```
 
 Based on the Fisher's Z-test, the Z score is `r results_ap_hi$Z_score` and the P value is `r results_ap_hi$P_value`. The correlation between BMI and Systolic Blood Pressure shows no statistically significant difference between the two AVD groups, suggesting the results may be due to random variation rather than a meaningful effect.
@@ -398,10 +406,12 @@ Task 5: Answer the same question for the diastolic blood pressure.
 
 ```{r}
 # calculate the correlation cofficient between BMI and Diastolic blood pressure
-correlation_lo <- calculate_correlation(df, "BMI", "ap_lo") 
+result_2 <- calculate_correlation(df, "BMI", "ap_lo") 
+correlation_lo <- result_2$correlation
+p_value_lo <- result_2$p_value
 ```
 
-The Correlation Between BMI and Diastolic blood pressure is `r correlation_lo`.
+The Correlation Between BMI and Diastolic blood pressure is `r correlation_lo` and p-value is `r p_value_lo`.
 
 ```{r fig.align='center'}
 #| fig-width: 6
@@ -432,7 +442,7 @@ results_ap_lo_df <- data.frame(
 kable_table_func(results_ap_lo_df, "Fisher's Z-test for Correlations between BMI and Diastolic blood pressure grouped by cardio")
 ```
 
-Answer: The correlation coefficient between BMI and Diastolic Blood Pressure (ap_lo) is `r correlation_lo`, indicating a weak positive correlation. This suggests that as BMI increases, Diastolic Blood Pressure tends to rise slightly, though the relationship is not strong.
+Answer: The correlation coefficient between BMI and Diastolic Blood Pressure (DBP) is `r correlation_lo`, indicating a weak positive correlation. The p-value is `r p_value_lo`, suggesting that this correlation is statistically significant across the dataset.
 
 Based on Fisher's Z-test, the Z-score is `r results_ap_lo$Z_score`, and the P-value is `r results_ap_lo$P_value`. These results show no statistically significant difference in the correlation coefficients between BMI and Diastolic Blood Pressure across the two groups of individuals with/without cardiovascular disease. The observed outcomes may be attributed to random variation rather than a meaningful effect.
 
@@ -517,7 +527,10 @@ summary_age_by_cardio <- df %>%
   )
 # convert into kable table
 kable_table_func(summary_age_by_cardio, "Summarize age distribution for each cardio group")
+# T test for the  BMI means in two cardio groups
+t_test_result_2 <- t.test(age ~ cardio, data = df, var.equal = TRUE)
 ```
+The two-sample t-test, assuming normality, independence, and equal variances, showed a significant difference in mean age between individuals with and without cardiovascular disease (p-value `r t_test_result_2$p.value`), indicating that those with CVD tend to have elder age.
 
 \newpage
 
@@ -555,6 +568,8 @@ ggplot(df, aes(x = as.factor(gender), y = age, fill = as.factor(cardio))) +
                     labels = c("No Cardio", "Yes Cardio")) +
   theme_minimal()
 ```
+Conclusion: 
+Age distribution shows that individuals with cardiovascular disease are generally older than those without the disease, and this pattern is consistent across both genders. Both males and females with cardiovascular disease have higher ages compared to their counterparts without the disease. This indicates that age is a significant risk factor for cardiovascular disease, regardless of gender.
 
 \newpage
 
@@ -586,81 +601,22 @@ ggplot(df, aes(x = as.factor(gender), y = age, fill = gluc)) +
 
 ```
 
+Age and Glucose Levels:
+Across all glucose levels, individuals with cardiovascular disease are older than those without, for both genders.
+
+Gender-Specific Observations:
+We observe that in the population with very high glucose levels (glucose level = "high"), females are generally younger than males, indicating that women may develop blood sugar issues at a younger age.
+
+
+\newpage
+
+## Chapter 10: Risk Factors for CVD: Comparing Lifestyle Parameters Using χ² Tests
+
+Task 10: Further risk factors for a cardiovascular disease may be smoking, alcohol, and insufffcient physical activity. Create plots and an overview table of how these three parameters are distributed between the two types of cardio and compare all three with a χ 2 -test, respectively. Draw a conclusion about which of these parameters may be risk factors for cardiovascular diseases.
+
 ```{r fig.align='center'}
 #| fig-width: 5
 #| fig-height: 4
-# Define a function to create distribution plots
-create_distribution_plot <- function(df, variable, title, x_label) {
-  ggplot(df, aes(x = .data[[variable]], fill = cardio)) +
-    geom_bar(position = "fill") +
-    labs(
-      title = title,
-      x = x_label,
-      y = "Proportion",
-      fill = "Cardio (No Disease, Disease)"
-    ) +
-    theme_minimal()
-}
-
-# Define the variables and their corresponding titles and labels
-# variables <- list(
-#   list(name = "smoke", title = "Smoking Distribution by Cardio Groups", x_label = "Smoking (No, Yes)"),
-#   list(name = "alco", title = "Alcohol Consumption Distribution by Cardio Groups", x_label = "Alcohol Consumption (No, Yes)"),
-#   list(name = "active", title = "Physical Activity Distribution by Cardio Groups", x_label = "Physical Activity (Inactive, Active)")
-# )
-# 
-# # Create a list of plots
-# lapply(variables, function(var) {
-#   create_distribution_plot(
-#     df,
-#     variable = var$name,
-#     title = var$title,
-#     x_label = var$x_label
-#   )
-# })
-#########################
-# Function to create distribution plots with proportions and dynamic title/x_label
-create_distribution_plot <- function(df, variable) {
-  # Calculate proportions
-  prop_data <- df %>%
-    group_by(.data[[variable]], cardio) %>%
-    summarize(count = n(), .groups = "drop") %>%
-    group_by(.data[[variable]]) %>%
-    mutate(proportion = count / sum(count),
-           proportion_label = scales::percent(proportion, accuracy = 0.1))
- 
-  # print(prop_data)
-  # kable_table_func(prop_data, "propotion for each cardio group")
-   
-  # Create the plot
-  ggplot(prop_data, aes(x = .data[[variable]], y = proportion, fill = cardio)) +
-    geom_bar(stat = "identity", position = "fill") +
-    geom_text(
-      aes(label = proportion_label), 
-      position = position_fill(vjust = 0.5), 
-      size = 3
-    ) +
-    scale_fill_manual(
-      values = c("absent" = "lightgreen", "present" = "pink"),
-      labels = c("No Disease", "Disease")
-    ) +
-    labs(
-      title = paste(variable, "Distribution by Cardio Groups"),
-      x = variable,
-      y = "Proportion",
-      fill = "Cardio"
-    ) +
-    theme_minimal()
-}
-
-# Define the variables to plot
-variables <- c("smoke", "alco", "active")
-
-# Create a list of plots dynamically
-lapply(variables, function(var) {
-  create_distribution_plot(df, variable = var)
-})
-########################################
 
 # Function to create distribution plots with overall proportions
 create_distribution_plot <- function(df, variable) {
@@ -686,7 +642,7 @@ create_distribution_plot <- function(df, variable) {
       labels = c("No Disease", "Disease")
     ) +
     labs(
-      title = paste(variable, "Distribution by Cardio Groups (Overall Proportion)"),
+      title = paste(str_to_title(variable), "Distribution by Cardio Groups (Overall Proportion)"),
       x = variable,
       y = "Proportion of Total",
       fill = "Cardio Status"
@@ -704,36 +660,7 @@ lapply(variables, function(var) {
 ```
 
 ```{r}
-# Create a summary table
-summary_table_1 <- data.frame(
-  Category = c("Smoking", "Alcohol", "Physical Activity"),  # Categories to summarize
-  Yes = c(sum(df$smoke == "yes"), sum(df$alco == "yes"), sum(df$active == "yes")),  # Count of "yes" responses
-  No = c(sum(df$smoke == "no"), sum(df$alco == "no"), sum(df$active == "no"))  # Count of "no" responses
-)
-
-# Add a total column for each category
-summary_table_1$Total <- summary_table_1$Yes + summary_table_1$No
-
-####################
-# Create a detailed summary table considering the 'cardio' factor
-summary_table_2 <- df %>%
-  group_by(cardio) %>%
-  summarize(
-    Smoking_Yes = sum(smoke == "yes"),
-    Smoking_No = sum(smoke == "no"),
-    Alcohol_Yes = sum(alco == "yes"),
-    Alcohol_No = sum(alco == "no"),
-    Active_Yes = sum(active == "yes"),
-    Active_No = sum(active == "no")
-  ) %>%
-  mutate(
-    Total_Smoking = Smoking_Yes + Smoking_No,
-    Total_Alcohol = Alcohol_Yes + Alcohol_No,
-    Total_Active = Active_Yes + Active_No
-  )
-
-
-# Create a detailed summary table considering the 'cardio' factor
+# Create a summary table considering the 'cardio' factor
 summary_table <- df %>%
   group_by(cardio) %>%
   summarize(
@@ -743,12 +670,7 @@ summary_table <- df %>%
     Alcohol_No = sum(alco == "no"),
     Active_Yes = sum(active == "yes"),
     Active_No = sum(active == "no")
-  ) %>%
-  mutate(
-    Total_Smoking = Smoking_Yes + Smoking_No,
-    Total_Alcohol = Alcohol_Yes + Alcohol_No,
-    Total_Active = Active_Yes + Active_No
-  )
+  ) 
 
 # Reshape the summary table into a vertical format
 vertical_table <- summary_table %>%
@@ -756,7 +678,8 @@ vertical_table <- summary_table %>%
     cols = -cardio,  # Columns to reshape (all except 'cardio')
     names_to = "Category",  # Name for the new column with variable names
     values_to = "Count"  # Name for the new column with values
-  )
+  ) %>% arrange(Category)
+kable_table_func(vertical_table, "Summary of Lifestyle Factors Counts by Cardiovascular Risk Group")
 ```
 
 ```{r}
@@ -773,8 +696,16 @@ overview_table <- df %>%
     Active_No = round(sum(active == "no") / n(), 4)
   )
 
+long_table <- overview_table %>%
+  pivot_longer(
+    cols = -cardio, 
+    names_to = "Category",
+    #names_sep = "_", 
+    values_to = "Proportion"
+  ) %>%
+  arrange(Category)
 
-kable_table_func(overview_table, "propotion for each cardio group")
+kable_table_func(long_table, "Proportions of Lifestyle Factors by Cardiovascular Risk Group")
 ```
 
 ```{r}
@@ -790,14 +721,139 @@ alcohol_test <- chisq.test(alcohol_table)
 activity_table <- table(df$active, df$cardio)
 activity_test <- chisq.test(activity_table)
 
-# Display the results
-list(
-  Smoking_Test = smoking_test,
-  Alcohol_Test = alcohol_test,
-  Activity_Test = activity_test
+# Chi-Square test for glucose level
+gluc_table <- table(df$gluc, df$cardio)
+gluc_test <- chisq.test(gluc_table)
+
+# Create a table to display the result.
+test_results <- data.frame(
+  Test = c("Smoking", "Alcohol", "Physical Activity", "Glucose Level"),
+  Chi_Square_Statistic = c(smoking_test$statistic, alcohol_test$statistic, activity_test$statistic, gluc_test$statistic),
+  Degrees_of_Freedom = c(smoking_test$parameter, alcohol_test$parameter, activity_test$parameter, gluc_test$parameter),
+  p_Value = c(smoking_test$p.value, alcohol_test$p.value, activity_test$p.value, gluc_test$p.value)
 )
-```
 
-```{r}
-
+kable_table_func(test_results, "Chi-Square Test Results for Risk Factors and Cardiovascular Risk")
 ```
+Based on the p-values:
+
+1.  **Smoking** and **Alcohol Consumption** : No significant association with cardiovascular diseases.
+
+2.  **Physical Activity** and **Glucose Level** : Significant association, suggesting that insufficient activity and high glucose level are potential risk factors.
+
+\newpage
+
+## Chapter 11: 
+
+#### Analysis Steps and Results
+
+1.  Data Preparation: Variables were transformed into appropriate types, and categorical variables were labeled.
+2.  Outlier Detection: Continuous variables like age, height, weight, systolic blood pressure (ap_hi), and diastolic blood pressure (ap_lo) were analyzed for outliers. Rows with missing values are excluded.
+3.  BMI Calculation: BMI was computed and summarized across two groups: individuals with and without CVD. T test suggests that individuals with CVD tend to have significantly higher BMI than those without.
+4.  Correlation Analysis between BMI and blood pressure：Weak positive correlations were found between BMI and blood pressure (both systolic and diastolic). However, there was no statistically significant difference in these correlations between CVD and non-CVD groups based on Fisher’s Z-tests.
+5. Categorization and Distribution Analysis of BMI：BMI was categorized into quartiles. The analysis revealed that higher BMI quartiles were associated with an increased prevalence of CVD, as demonstrated by the distribution in quartiles and visualizations like heatmaps.
+6.  Age Distribution：CVD patients were, on average, older compared to non-CVD individuals. T test suggests significant difference.
+7.  Lifestyle and glucose level Risk Factors: Chi-square tests were conducted to assess the association between smoking, alcohol consumption, physical activity and glucose level with CVD. The results indicated: Physical inactivity and glucose level were significantly associated with CVD. Smoking and alcohol consumption showed no statistically significant associations.
+
+Conclusion:
+
+-   Higher BMI is associated with cardiovascular disease. Individuals with CVD have a higher mean BMI and are more represented in the higher BMI quartiles consistent with findings from previous studies emphasizing that cardiovascular disease risk was increased among those who were overweight. [@hubert1983obesity].
+
+-   Higher glucose level and Older age are also associated with CVD, as evidenced by the higher mean and median ages of CVD patients compared to non-CVD individuals.
+
+-   Physical inactivity is identified as a significant risk factor for cardiovascular disease, aligning with research highlighting sedentary behavior as a modifiable CVD risk factor [@lee2012physical-inactivity].
+
+
+The primary research question focuses on whether cardiovascular disease (variable `cardio`) can be explained by other factors. Our analysis has identified several variables significantly associated with cardiovascular disease, suggesting they are important predictors. However, whether these factors fully explain the outcome variable requires further investigation.
+
+For a more comprehensive understanding, advanced modeling techniques like logistic regression should be employed. These models can quantify the explanatory power of the predictors using metrics such as pseudo R², while performance metrics like AUC, F1 score will evaluate the model’s predictive capabilities. Such analyses are essential to determine how well these factors collectively contribute to explaining and predicting cardiovascular disease.
+
+
+
+
+
+
+
+#### 1. **Data Preparation**
+
+-   Variables were transformed into appropriate types, and categorical variables were labeled (e.g., gender, cholesterol, smoking habits). The dataset included health metrics such as age, blood pressure, BMI, and lifestyle factors.
+
+#### 2. **Outlier Detection**
+
+-   Continuous variables like age, height, weight, systolic blood pressure (ap_hi), and diastolic blood pressure (ap_lo) were analyzed for outliers.
+-   Rows with missing values are excluded
+-   Implausible values (e.g., extreme blood pressure readings) were removed, and summaries were recalculated.
+
+#### 3. **BMI Calculation**
+
+-   BMI was computed and summarized across two groups: individuals with and without CVD. Results showed higher average BMI in the CVD group compared to the non-CVD group.
+
+#### 4. **Correlation Analysis**
+
+-   A weak positive correlation was found between BMI and both systolic (0.279) and diastolic blood pressure (0.2542). However, no statistically significant differences in correlations were found between individuals with or without CVD.
+
+#### 5. **BMI Quartile Categorization**
+
+-   BMI was divided into quartiles to analyze distribution across CVD groups. Higher BMI quartiles were associated with a greater proportion of CVD cases.
+
+#### 6. **Age Distribution**
+
+-   CVD patients were, on average, older (mean age \~55 years) compared to non-CVD individuals (\~52 years). Age distribution was visualized by gender and glucose levels, revealing slight variations across groups.
+
+#### 7. **Lifestyle Risk Factors**
+
+-   Smoking, alcohol consumption, and physical inactivity were compared between CVD groups using χ² tests. Results indicated no significant association for smoking (p=0.96) or alcohol (p=0.20).
+
+-   Insufficient physical activity showed a significant association with CVD (p=0.015), highlighting it as a potential risk factor.
+
+### Conclusion
+
+Key findings suggest that higher BMI, older age, and physical inactivity are associated with cardiovascular disease. Lifestyle interventions targeting physical activity could be a priority for reducing CVD risk.
+
+
+### Analysis Steps and Results
+
+
+### **Analysis Steps**
+
+1.  **Data Preparation**\
+    Variables were transformed into appropriate types, and categorical variables were labeled. Key health metrics were categorized for analysis.
+
+2.  **Outlier Detection**\
+    Continuous variables like age, blood pressure, height, and weight were checked for outliers. Implausible values were removed to ensure the integrity of the analysis.
+
+3.  **BMI Calculation**\
+    BMI was computed, and its distribution was summarized across groups with and without cardiovascular disease (CVD). It was observed that individuals with CVD had a higher mean BMI (28.31) than those without CVD (26.34). T test suggests that individuals with CVD tend to have significantly higher BMI than those without.
+
+
+
+
+4.  **Correlation Analysis between BMI and blood pressure**\
+    Weak positive correlations were found between BMI and blood pressure (both systolic and diastolic). However, there was no statistically significant difference in these correlations between CVD and non-CVD groups based on Fisher’s Z-tests.
+
+5.  **Categorization and Distribution Analysis of BMI**\
+    BMI was categorized into quartiles. The analysis revealed that higher BMI quartiles were associated with an increased prevalence of CVD, as demonstrated by the distribution in quartiles and visualizations like heatmaps.
+
+6.  **Lifestyle Risk Factors**\
+    Chi-square tests were conducted to assess the association between smoking, alcohol consumption, and physical activity with CVD. The results indicated:
+
+-   Physical inactivity was significantly associated with CVD (p=0.015).
+
+-   Smoking and alcohol consumption showed no statistically significant associations.
+
+
+7.  **Age Distribution**\
+    CVD patients were, on average, older (mean age: \~55 years) compared to non-CVD individuals (\~52 years). 
+
+### **Key Findings**
+
+-   Higher BMI is associated with cardiovascular disease. Individuals with CVD have a higher mean BMI and are more represented in the higher BMI quartiles consistent with findings from previous studies emphasizing that cardiovascular disease risk was increased among those who were overweight. [@hubert1983obesity].
+
+-   Older age is also associated with CVD, as evidenced by the higher mean and median ages of CVD patients compared to non-CVD individuals.
+
+-   Physical inactivity is identified as a significant risk factor for cardiovascular disease (p=0.015 in the chi-square test), aligning with research highlighting sedentary behavior as a modifiable CVD risk factor [@lee2012physical-inactivity].
+
+**Conclusion**:\
+This study highlights BMI, age, and physical inactivity as critical factors associated with cardiovascular disease. The results emphasize the importance of managing weight and promoting physical activity to reduce CVD risk. Further inferential testing is needed to establish causality.
+
+## References
