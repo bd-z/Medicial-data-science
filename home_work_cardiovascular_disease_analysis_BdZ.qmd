@@ -1,7 +1,8 @@
 ---
-title: "home_work_test"
+title: "Cardiovascular_Risk_Analysis_Report:Home_Work"
 author: "Baodong Zhang"
 format: pdf
+date: "2025-01-12"
 echo: false
 warning: false   
 message: false   
@@ -20,7 +21,7 @@ bibliography: references.bib
 
 ## Introduction
 
-Cardiovascular diseases (CVD) are a leading cause of mortality worldwide [@who-cvd]. This report investigates whether cardiovascular disease (variable \`cardio\`) can be explained by other variables such as age, gender, blood pressure, BMI, and lifestyle factors like smoking, alcohol consumption, and physical activity. The analysis is based on a dataset containing various health metrics.
+Cardiovascular diseases (CVD) are a leading cause of mortality worldwide [@who-cvd]. This report investigates whether cardiovascular disease (variable \`cardio\`) can be explained by other variables such as age, gender, glucose level, BMI, and lifestyle factors like smoking, alcohol consumption, and physical activity. The analysis is based on a dataset containing various health metrics.
 
 \newpage
 
@@ -602,7 +603,7 @@ ggplot(df, aes(x = as.factor(gender), y = age, fill = gluc)) +
 ```
 
 Age and Glucose Levels:
-Across all glucose levels, individuals with cardiovascular disease are older than those without, for both genders.
+Among individuals with normal blood glucose levels, those with cardiovascular disease generally have a higher median age compared to those without. However, in groups with elevated or very high blood glucose levels, the difference in median age between individuals with and without cardiovascular disease is less pronounced, particularly among females.
 
 Gender-Specific Observations:
 We observe that in the population with very high glucose levels (glucose level = "high"), females are generally younger than males, indicating that women may develop blood sugar issues at a younger age.
@@ -745,28 +746,41 @@ Based on the p-values:
 
 ## Chapter 11: Summary
 
-#### Analysis Steps and Results
+### Analysis Steps:
 
-1.  Data Preparation: Variables were transformed into appropriate types, and categorical variables were labeled.
-2.  Outlier Detection: Continuous variables like age, height, weight, systolic blood pressure (ap_hi), and diastolic blood pressure (ap_lo) were analyzed for outliers. Rows with missing values are excluded.
-3.  BMI Calculation: BMI was computed and summarized across two groups: individuals with and without CVD. T test suggests that individuals with CVD tend to have significantly higher BMI than those without.
-4.  Correlation Analysis between BMI and blood pressure：Weak positive correlations were found between BMI and blood pressure (both systolic and diastolic). However, there was no statistically significant difference in these correlations between CVD and non-CVD groups based on Fisher’s Z-tests.
-5. Categorization and Distribution Analysis of BMI：BMI was categorized into quartiles. The analysis revealed that higher BMI quartiles were associated with an increased prevalence of CVD, as demonstrated by the distribution in quartiles and visualizations like heatmaps.
-6.  Age Distribution：CVD patients were, on average, older compared to non-CVD individuals. T test suggests significant difference.
-7.  Lifestyle and glucose level Risk Factors: Chi-square tests were conducted to assess the association between smoking, alcohol consumption, physical activity and glucose level with CVD. The results indicated: Physical inactivity and glucose level were significantly associated with CVD. Smoking and alcohol consumption showed no statistically significant associations.
+1. Data Preparation: Variables were transformed into appropriate data types, and categorical variables were labeled for clarity.  
 
-Conclusion:
+2. Outlier Detection: Continuous variables (age, height, weight, systolic blood pressure, and diastolic blood pressure) were analyzed for outliers, and missing values were excluded to ensure data quality.  
 
--   Higher BMI is associated with cardiovascular disease. Individuals with CVD have a higher mean BMI and are more represented in the higher BMI quartiles consistent with findings from previous studies emphasizing that cardiovascular disease risk was increased among those who were overweight. [@hubert1983obesity].
+3. BMI and CVD: BMI was calculated and analyzed. Individuals with CVD had significantly higher BMI values compared to those without, as confirmed by a t-test.  
 
--   Higher glucose level and Older age are also associated with CVD, as evidenced by the higher mean and median ages of CVD patients compared to non-CVD individuals.
+4. Correlation Analysis: Weak positive correlations were observed between BMI and both systolic and diastolic blood pressure. Fisher’s Z-tests showed no significant differences in these correlations between CVD and non-CVD groups.  
 
--   Physical inactivity is identified as a significant risk factor for cardiovascular disease, aligning with research highlighting sedentary behavior as a modifiable CVD risk factor [@lee2012physical-inactivity].
+5. BMI Distribution: BMI quartile analysis revealed a higher prevalence of CVD in the upper quartiles, supporting the link between increased BMI and cardiovascular disease.  
 
+6. Age and CVD: CVD patients were older on average, with a statistically significant difference confirmed by a t-test.  
 
-The primary research question focuses on whether cardiovascular disease (variable `cardio`) can be explained by other factors. Our analysis has identified several variables significantly associated with cardiovascular disease, suggesting they are important predictors. However, whether these factors fully explain the outcome variable requires further investigation.
+7. Lifestyle and Glucose Levels: Chi-square tests highlighted physical inactivity and elevated glucose levels as significant risk factors for CVD, while smoking and alcohol consumption showed no significant associations.  
 
-For a more comprehensive understanding, advanced modeling techniques like logistic regression should be employed. These models can quantify the explanatory power of the predictors using metrics such as pseudo R², while performance metrics like AUC, F1 score will evaluate the model’s predictive capabilities. Such analyses are essential to determine how well these factors collectively contribute to explaining and predicting cardiovascular disease.
+### Key Findings:
 
+- BMI and CVD: Higher BMI is linked to cardiovascular disease, with individuals in higher BMI quartiles at greater risk, consistent with previous studies showing increased CVD risk in overweight individuals [@hubert1983obesity].
+
+- Glucose Levels and Age: Elevated glucose levels and older age also emerged as key factors linked to CVD.
+
+- Physical Inactivity: Insufficient physical activity was identified as a significant modifiable risk factor for CVD, consistent with research emphasizing the same conclusion[@lee2012physical-inactivity].  
+
+### Next Steps:
+
+This analysis identified BMI, glucose levels, age, and physical inactivity as significant predictors of CVD. To better understand their combined impact, further steps include:
+
+1. Advanced Modeling: Use logistic regression or other classification models to quantify each predictor’s contribution.  
+
+2. Performance Metrics: Assess model effectiveness using metrics like pseudo R², AUC, and F1 score.
+
+3. Future Research: Incorporate additional variables, such as cholesterol, blood pressure, dietary habits, genetics, and socioeconomic factors, to provide a more comprehensive understanding of CVD risk.
+
+These approaches will help evaluate how well these factors collectively explain and predict cardiovascular disease.
 \newpage
+
 ## References
