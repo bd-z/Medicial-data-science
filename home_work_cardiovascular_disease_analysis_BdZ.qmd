@@ -743,7 +743,7 @@ Based on the p-values:
 
 \newpage
 
-## Chapter 11: 
+## Chapter 11: Summary
 
 #### Analysis Steps and Results
 
@@ -768,92 +768,5 @@ The primary research question focuses on whether cardiovascular disease (variabl
 
 For a more comprehensive understanding, advanced modeling techniques like logistic regression should be employed. These models can quantify the explanatory power of the predictors using metrics such as pseudo R², while performance metrics like AUC, F1 score will evaluate the model’s predictive capabilities. Such analyses are essential to determine how well these factors collectively contribute to explaining and predicting cardiovascular disease.
 
-
-
-
-
-
-
-#### 1. **Data Preparation**
-
--   Variables were transformed into appropriate types, and categorical variables were labeled (e.g., gender, cholesterol, smoking habits). The dataset included health metrics such as age, blood pressure, BMI, and lifestyle factors.
-
-#### 2. **Outlier Detection**
-
--   Continuous variables like age, height, weight, systolic blood pressure (ap_hi), and diastolic blood pressure (ap_lo) were analyzed for outliers.
--   Rows with missing values are excluded
--   Implausible values (e.g., extreme blood pressure readings) were removed, and summaries were recalculated.
-
-#### 3. **BMI Calculation**
-
--   BMI was computed and summarized across two groups: individuals with and without CVD. Results showed higher average BMI in the CVD group compared to the non-CVD group.
-
-#### 4. **Correlation Analysis**
-
--   A weak positive correlation was found between BMI and both systolic (0.279) and diastolic blood pressure (0.2542). However, no statistically significant differences in correlations were found between individuals with or without CVD.
-
-#### 5. **BMI Quartile Categorization**
-
--   BMI was divided into quartiles to analyze distribution across CVD groups. Higher BMI quartiles were associated with a greater proportion of CVD cases.
-
-#### 6. **Age Distribution**
-
--   CVD patients were, on average, older (mean age \~55 years) compared to non-CVD individuals (\~52 years). Age distribution was visualized by gender and glucose levels, revealing slight variations across groups.
-
-#### 7. **Lifestyle Risk Factors**
-
--   Smoking, alcohol consumption, and physical inactivity were compared between CVD groups using χ² tests. Results indicated no significant association for smoking (p=0.96) or alcohol (p=0.20).
-
--   Insufficient physical activity showed a significant association with CVD (p=0.015), highlighting it as a potential risk factor.
-
-### Conclusion
-
-Key findings suggest that higher BMI, older age, and physical inactivity are associated with cardiovascular disease. Lifestyle interventions targeting physical activity could be a priority for reducing CVD risk.
-
-
-### Analysis Steps and Results
-
-
-### **Analysis Steps**
-
-1.  **Data Preparation**\
-    Variables were transformed into appropriate types, and categorical variables were labeled. Key health metrics were categorized for analysis.
-
-2.  **Outlier Detection**\
-    Continuous variables like age, blood pressure, height, and weight were checked for outliers. Implausible values were removed to ensure the integrity of the analysis.
-
-3.  **BMI Calculation**\
-    BMI was computed, and its distribution was summarized across groups with and without cardiovascular disease (CVD). It was observed that individuals with CVD had a higher mean BMI (28.31) than those without CVD (26.34). T test suggests that individuals with CVD tend to have significantly higher BMI than those without.
-
-
-
-
-4.  **Correlation Analysis between BMI and blood pressure**\
-    Weak positive correlations were found between BMI and blood pressure (both systolic and diastolic). However, there was no statistically significant difference in these correlations between CVD and non-CVD groups based on Fisher’s Z-tests.
-
-5.  **Categorization and Distribution Analysis of BMI**\
-    BMI was categorized into quartiles. The analysis revealed that higher BMI quartiles were associated with an increased prevalence of CVD, as demonstrated by the distribution in quartiles and visualizations like heatmaps.
-
-6.  **Lifestyle Risk Factors**\
-    Chi-square tests were conducted to assess the association between smoking, alcohol consumption, and physical activity with CVD. The results indicated:
-
--   Physical inactivity was significantly associated with CVD (p=0.015).
-
--   Smoking and alcohol consumption showed no statistically significant associations.
-
-
-7.  **Age Distribution**\
-    CVD patients were, on average, older (mean age: \~55 years) compared to non-CVD individuals (\~52 years). 
-
-### **Key Findings**
-
--   Higher BMI is associated with cardiovascular disease. Individuals with CVD have a higher mean BMI and are more represented in the higher BMI quartiles consistent with findings from previous studies emphasizing that cardiovascular disease risk was increased among those who were overweight. [@hubert1983obesity].
-
--   Older age is also associated with CVD, as evidenced by the higher mean and median ages of CVD patients compared to non-CVD individuals.
-
--   Physical inactivity is identified as a significant risk factor for cardiovascular disease (p=0.015 in the chi-square test), aligning with research highlighting sedentary behavior as a modifiable CVD risk factor [@lee2012physical-inactivity].
-
-**Conclusion**:\
-This study highlights BMI, age, and physical inactivity as critical factors associated with cardiovascular disease. The results emphasize the importance of managing weight and promoting physical activity to reduce CVD risk. Further inferential testing is needed to establish causality.
-
+\newpage
 ## References
